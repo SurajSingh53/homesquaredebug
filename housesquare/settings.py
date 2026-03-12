@@ -14,9 +14,9 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 # CSRF — required for admin + forms to work on Railway
 CSRF_TRUSTED_ORIGINS = [
-    x.strip() for x in os.environ.get(
-        'CSRF_TRUSTED_ORIGINS', 'http://localhost:8000'
-    ).split(',') if x.strip()
+    'https://homesquaredebug-production.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 
 INSTALLED_APPS = [
