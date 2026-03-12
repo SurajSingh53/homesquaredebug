@@ -7,11 +7,17 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-housesquare-change-me-in-production-xyz123abc'
+# ─── SECURITY ────────────────────────────────────────────────
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-housesquare-change-me-in-production-xyz123abc')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+# CSRF — required for admin + forms to work on Railway
+CSRF_TRUSTED_ORIGINS = [
+    x.strip() for x in os.environ.get(
+        'CSRF_TRUSTED_ORIGINS', 'http://localhost:8000'
+    ).split(',') if x.strip()
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -53,12 +60,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'housesquare.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# ─── DATABASE ────────────────────────────────────────────────
+# Uses PostgreSQL on Railway (DATABASE_URL), SQLite locally
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -72,23 +92,24 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+# ─── STATIC FILES ────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files (uploaded images)
+# ─── MEDIA FILES ─────────────────────────────────────────────
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Messages framework
+# ─── MESSAGES ────────────────────────────────────────────────
 from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
-    messages.DEBUG: 'debug',
-    messages.INFO: 'info',
+    messages.DEBUG:   'debug',
+    messages.INFO:    'info',
     messages.SUCCESS: 'success',
     messages.WARNING: 'warning',
-    messages.ERROR: 'danger',
+    messages.ERROR:   'danger',
 }
